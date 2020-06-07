@@ -35,6 +35,13 @@ class Graph():
 	
 	def get_dim(self):
 		return len(self.data)
+		
+	def get_successors(self, node):
+		results = []
+		for i in range(0, self.get_dim()):
+			if self.data[node][i] != 0:
+				results.append(i)
+		return result
 
 
 #Network tracks both routes and flow, each of which are instances of Graph.
@@ -97,5 +104,26 @@ class Network():
 		stream = [water] * len(path)
 		self.flow[path] = [x+y for (x,y) in zip(self.flow[path], stream)]
 		
+	def get_residual_successors(self, node):
+		residuals = [x-y for (x,y) in zip(self.data.data[node], self.flow.data[node])]
+		result = []
+		for i in len(residuals):
+			if residuals[i] != 0:
+				results.append(i)
+		return result
 		
-		
+	def BFS(self, start, end):
+		Q = [start]
+		discovered = [start]
+		paths = {}
+		for each in self.data.get_dim():
+			paths[each] = []
+		while Q:
+			v = Q.pop(0)
+			if v == end:
+				return paths[v]
+			for each in self.data.get_residual_successors(v):
+				if each != discovered:
+					discovered.append(each)
+					paths[v].append(each)
+					Q.append(each)
