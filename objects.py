@@ -59,15 +59,15 @@ class Network():
 		self.flow = Graph([[0 for _ in self.data.dim()] for _ in self.data.dim()])
 		
 	def augment(self):
-		self.start = 0
-		self.end = len(self.data)
-		
-		self.data.add_node(self.start)
-		self.data.add_node(self.end)
+		self.data.add_node(0) #prepend node
+		self.data.add_node(len(self.data)) #append node
 		
 		#all node labels are now off by 1:
-		self.starts = self.starts + [1 for _ in range(0,len(self.starts))]
-		self.ends = self.ends + [1 for _ in range(0,len(self.ends))]
+		self.starts = [each + 1 for each in self.starts]
+		self.ends = [each + 1 for each in self.ends]
+		
+		self.start = 0 #initial node label
+		self.end = len(self.data) - 1 #final node label
 		
 		starts_outflow = []
 		for each in self.starts:
@@ -106,30 +106,33 @@ class Network():
 		#self.flow[path] += self.flow[path] + water
 		stream = [water] * len(path)
 		self.flow[path] = [x+y for (x,y) in zip(self.flow[path], stream)]
-		
+	
+	#returns a list of successor nodes with positive residual flow capacity remaining.
 	def get_residual_successors(self, node):
-		residuals = [x-y for (x,y) in zip(self.data.data[node], self.flow.data[node])]
+		residuals = [x-y for (x,y) in zip(self.data.get_outflow(node), self.flow.get_outflow(node))]
 		result = []
-		for i in range(0,len(residuals)):
-			if residuals[i] != 0:
-				result.append(i)
+		for ind, val in enumerate(residuals):
+			if val != 0:
+				result.append(ind)
 		return result
 	
 	#BFS on residual network:	
 	def BFS(self, start, end):
 		Q = [start]
 		discovered = [start]
-		paths = {}
-		for each in self.data.dim():
-			paths[each] = []
+		pred = {}
+		#instead of relying on defaultdict:
+		for each_node in self.data.dim():
+			pred[each_node] = None
 		while Q:
 			v = Q.pop(0)
 			if v == end:
-				return paths[v]
+				return pred
 			else:
 				for each in self.get_residual_successors(v):
 					if each not in discovered:
 						discovered.append(each)
-						paths[v].append(each)
+						pred[each] = v
 						Q.append(each)
-		return []
+		#no paths found from start to end:
+		return None
