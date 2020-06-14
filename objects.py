@@ -71,15 +71,15 @@ class Network():
 		
 		starts_outflow = []
 		for each in self.starts:
-			m = max(self.data.get_outflow(each))
+			m = sum(self.data.get_outflow(each))
 			starts_outflow.append(m)
-		m = max(starts_outflow)
+		m = sum(starts_outflow)
 		
 		ends_inflow = []
 		for each in self.ends:
-			n = max(self.data.get_inflow(each))
+			n = sum(self.data.get_inflow(each))
 			ends_inflow.append(n)
-		n = max(ends_inflow)
+		n = sum(ends_inflow)
 		
 		for each in self.starts:
 			self.data.link(self.start,each,m)
@@ -90,12 +90,6 @@ class Network():
 	def flow_thru_path(self, path):
 		f = min(self.get_residual_flow(path))
 		self.update_flow(path, f)
-
-	# def get_residual_flow(self):
-	# 	#self.data - self.flow
-	# 	neg_flow = [[-x for x in each] for each in self.flow]
-	# 	#matrix addition:
-	# 	return [[sum(i) for i in zip(each[0], each[1])] for each in zip(self.data, neg_flow)]
 
 	def get_residual_flow(self, path):
 		#self.data[path] - self.flow[path]
@@ -116,7 +110,7 @@ class Network():
 				result.append(ind)
 		return result
 	
-	#BFS on residual network:	
+	#BFS on residual network. Returns dict of traversal history.
 	def BFS(self, start, end):
 		Q = [start]
 		discovered = [start]
@@ -136,3 +130,22 @@ class Network():
 						Q.append(each)
 		#no paths found from start to end:
 		return None
+
+#the core loop for the algorithm:
+def edmondsKarp(matrix, starts, ends):
+	network = Network(matrix, starts, ends)
+	path = network.BFS(network.start, network.end)
+	while path:
+		path = build_path(path, network.start, network.end)
+		network.flow_thru_path(path)
+		path = network.BFS(network.start, network.end)
+	return network.flow, network.flow.get_inflow(network.end)
+	
+#turns the dict result from BFS into an actual path:
+def build_path(path,start,end):
+	result = [end]
+	pred = end
+	while pred != start:
+		pred = path[pred]
+		result.insert(0,pred)
+	return result
